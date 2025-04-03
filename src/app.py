@@ -8,8 +8,11 @@ import PyPDF2
 from groq import Groq  
 
 _=load_dotenv(find_dotenv())
+st.set_page_config(page_title="ATS Resume Expert")
+st.header("ATS Tracking System")
 
-GROQ_API_KE = os.environ['GROQ_API_KEY1']
+
+GROQ_API_KE = st.text_input('Enter your api key')
 client = Groq(api_key=str(GROQ_API_KE))
 
 SAMPLE_RESUME_PATH = r"Reference Resume- Fresher.pdf"  
@@ -48,8 +51,6 @@ def get_groq_response(input_text, pdf_text, prompt):
     except Exception as e:
         return f"Error: {e}"
 
-st.set_page_config(page_title="ATS Resume Expert")
-st.header("ATS Tracking System")
 
 input_text = st.text_area("Job Description: ", key="input")
 uploaded_file = st.file_uploader("Upload your resume (PDF)...", type=["pdf"])
