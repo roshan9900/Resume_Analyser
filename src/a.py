@@ -1,6 +1,7 @@
 import os
 import PyPDF2
 import streamlit as st
+from groq import Groq
 
 # Configure page
 st.set_page_config(
@@ -9,25 +10,37 @@ st.set_page_config(
     layout="wide"
 )
 
+# Initialize Groq client - tries secrets first, falls back to user input
+try:
+    # Try to get API key from Streamlit secrets
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    client = Groq(api_key=GROQ_API_KEY)
+    using_secrets = True
+except (KeyError, AttributeError):
+    # Fall back to user input if secret not available
+    client = None
+    using_secrets = False
+
 # Header
 st.title("📝 ATS Resume Expert")
 st.write("Optimize your resume for Applicant Tracking Systems")
 
-# Initialize Groq client (will be set later if API key provided)
-client = None
-
 # Sidebar - Configuration
 with st.sidebar:
     st.header("🔧 Configuration")
-    GROQ_API_KEY = st.text_input('Enter your Groq API key', type="password")
     
-    if GROQ_API_KEY:
-        try:
-            from groq import Groq
-            client = Groq(api_key=GROQ_API_KEY)
-            st.success("✅ API key configured successfully")
-        except Exception as e:
-            st.error(f"❌ Error initializing Groq client: {str(e)}")
+    if not using_secrets:
+        # Only show API key input if not using secrets
+        GROQ_API_KEY = st.text_input('Enter your Groq API key', type="password")
+        
+        if GROQ_API_KEY:
+            try:
+                client = Groq(api_key=GROQ_API_KEY)
+                st.success("✅ API key configured successfully")
+            except Exception as e:
+                st.error(f"❌ Error initializing Groq client: {str(e)}")
+    else:
+        st.success("✅ Using secure API configuration")
     
     st.header("ℹ️ How It Works")
     st.write("""
@@ -99,16 +112,12 @@ def get_groq_response(input_text, pdf_text, prompt):
 
 # Response handling
 if analyze_btn or compare_btn:
-    if not GROQ_API_KEY:
-        st.error("❌ Please enter your Groq API key in the sidebar")
+    if not client:
+        st.error("❌ Please configure your API key")
         st.stop()
     
     if not uploaded_file:
         st.error("❌ Please upload your resume first")
-        st.stop()
-    
-    if not client:
-        st.error("❌ Could not initialize Groq client. Please check your API key.")
         st.stop()
     
     with st.spinner("🔍 Analyzing..."):
