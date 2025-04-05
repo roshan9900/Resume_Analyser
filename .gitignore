@@ -1,3 +1,4 @@
 .env
 venv/
 Resume_analyser.mp4
+.streamlit/secrets.toml

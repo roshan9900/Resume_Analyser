@@ -10,16 +10,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize Groq client - tries secrets first, falls back to user input
+# Initialize Groq client from secrets
 try:
-    # Try to get API key from Streamlit secrets
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
     client = Groq(api_key=GROQ_API_KEY)
-    using_secrets = True
-except (KeyError, AttributeError):
-    # Fall back to user input if secret not available
-    client = None
-    using_secrets = False
+except (KeyError, AttributeError) as e:
+    st.error("❌ Error: API key not configured in secrets. Please contact the administrator.")
+    st.stop()
 
 # Header
 st.title("📝 ATS Resume Expert")
@@ -27,20 +24,7 @@ st.write("Optimize your resume for Applicant Tracking Systems")
 
 # Sidebar - Configuration
 with st.sidebar:
-    st.header("🔧 Configuration")
-    
-    if not using_secrets:
-        # Only show API key input if not using secrets
-        GROQ_API_KEY = st.text_input('Enter your Groq API key', type="password")
-        
-        if GROQ_API_KEY:
-            try:
-                client = Groq(api_key=GROQ_API_KEY)
-                st.success("✅ API key configured successfully")
-            except Exception as e:
-                st.error(f"❌ Error initializing Groq client: {str(e)}")
-    else:
-        st.success("✅ Using secure API configuration")
+    st.success("✅ Secure API configuration active")
     
     st.header("ℹ️ How It Works")
     st.write("""
@@ -90,9 +74,6 @@ def extract_text_from_pdf(pdf_path_or_file):
     return text[:5000]
 
 def get_groq_response(input_text, pdf_text, prompt):
-    if not client:
-        return "Error: Groq client not initialized. Please check your API key."
-    
     messages = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": input_text},
@@ -112,10 +93,6 @@ def get_groq_response(input_text, pdf_text, prompt):
 
 # Response handling
 if analyze_btn or compare_btn:
-    if not client:
-        st.error("❌ Please configure your API key")
-        st.stop()
-    
     if not uploaded_file:
         st.error("❌ Please upload your resume first")
         st.stop()
